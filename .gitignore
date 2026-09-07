@@ -1,0 +1,23 @@
+# Compiled binaries and per-demo render output.
+/tools/out/
+/demos/*/out/
+*.exe
+
+# Rendered media. Frames and films are large and reproducible from source --
+# releases belong on the releases page, not in history.
+*.mp4
+*.wav
+*.ppm
+*.pgm
+
+# Brand intermediates. The finished PNGs under brand/channel and
+# brand/thumbnails are tracked on purpose: they are what gets uploaded.
+/brand/work/
+
+# Channel notes, kept beside the project but not part of it.
+/brand/CHANNEL.md
+
+# Editor state.
+.vscode/
+.idea/
+*.swp

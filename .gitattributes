@@ -1,0 +1,10 @@
+# Normalise text to LF in the repository, so a checkout on another platform is
+# not one enormous whitespace diff.
+* text=auto eol=lf
+
+# Binary assets, never touched.
+*.png binary
+*.ppm binary
+*.pgm binary
+*.wav binary
+*.mp4 binary
