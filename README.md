@@ -18,6 +18,7 @@ Each part stands on its own and can be read, built or downloaded separately.
 |---|---|
 | [`engine/`](engine/) | The shared renderer and synthesiser. HDR framebuffer, stroke font, post chain, noise, thread pool, oscillators and filters. |
 | [`demos/01-coldstart/`](demos/01-coldstart/) | A two-minute demo: nine scenes, a timeline and a soundtrack, built on the engine. |
+| [`demos/02-runtime/`](demos/02-runtime/) | Thirty seconds, vertical. The picture is shown being computed, row by row, in the order the thread pool walks it. |
 | [`tools/`](tools/) | Small programs that use the engine but are not part of any demo: a smoke test, a font sheet, and the channel-art renderer. |
 | [`brand/`](brand/) | Finished PNGs — avatar, banner, watermark, thumbnails. Ready to download and upload. |
 
@@ -65,9 +66,10 @@ so comments and blank lines are excluded there but present in the line count.
 | | Files | Lines | Code |
 |---|---:|---:|---:|
 | `engine/` | 18 | 2,715 | 1,998 |
-| `demos/01-coldstart/` | 13 | 2,307 | 1,569 |
-| `tools/` | 3 | 713 | 519 |
-| **Total** | **34** | **5,735** | **4,086** |
+| `demos/01-coldstart/` | 13 | 2,313 | 1,563 |
+| `demos/02-runtime/` | 7 | 1,404 | 935 |
+| `tools/` | 3 | 713 | 517 |
+| **Total** | **41** | **7,145** | **5,013** |
 
 Third-party libraries: none. The engine links libc and Win32, and nothing else.
 
