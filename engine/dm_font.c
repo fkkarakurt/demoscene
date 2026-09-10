@@ -8,9 +8,9 @@
 #define P 100   /* pen up -- start a new stroke */
 #define E 101   /* end of glyph */
 
-#define GRID_W  6.0f
-#define GRID_H 10.0f
-#define ADVANCE 8.0f   /* 6 of glyph plus 2 of side bearing */
+#define GRID_W  DM_GLYPH_W
+#define GRID_H  DM_GLYPH_H
+#define ADVANCE DM_GLYPH_ADVANCE   /* 6 of glyph plus 2 of side bearing */
 
 static const i8 G_SP[] = { E,0 };
 static const i8 G_EXCL[] = { 3,10, 3,3, P,0, 3,0, 3,0, E,0 };
@@ -93,6 +93,23 @@ static const i8 *const GLYPHS[64] = {
     G_P,    G_Q,    G_R,    G_S,    G_T,    G_U,    G_V,    G_W,
     G_X,    G_Y,    G_Z,    G_LBRK, G_BSLH, G_RBRK, G_CARE, G_USCR
 };
+
+int dm_glyph_points(int c, v2 *pts, u8 *pen, int cap)
+{
+    if (c >= 'a' && c <= 'z') c -= 32;
+    if (c < 32 || c > 95) return 0;
+
+    const i8 *g = GLYPHS[c - 32];
+    int n = 0, down = 0;
+    for (int i = 0; g[i] != E && n < cap; i += 2) {
+        if (g[i] == P) { down = 0; continue; }
+        pts[n] = V2((f32)g[i], (f32)g[i + 1]);
+        pen[n] = (u8)down;
+        down = 1;
+        n++;
+    }
+    return n;
+}
 
 dm_text dm_text_default(void)
 {

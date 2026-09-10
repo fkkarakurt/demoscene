@@ -40,38 +40,19 @@ static inline f32 osc_value(dm_osc_kind k, f32 ph, f32 dt, f32 pw, u32 *nseed)
 
 /* ---- state variable filter (topology preserving transform) -------------- */
 
-/* Zavalishin's TPT form. Unlike the classic Chamberlin SVF it stays stable and
- * keeps its tuning all the way up to Nyquist, which matters because the filter
- * envelopes here sweep several octaves in a few milliseconds. */
-typedef struct { f32 ic1, ic2; } svf;
-
-typedef struct { f32 a1, a2, a3, k; } svf_coef;
-
-static svf_coef svf_make(f32 cutoff_hz, f32 resonance)
+/* The tick is inline in dm_synth.h; building the coefficients costs a tanf
+ * and happens at control rate, so it lives here. */
+dm_svf_coef dm_svf_make(f32 cutoff_hz, f32 resonance)
 {
     f32 fc = dm_clamp(cutoff_hz, 20.0f, DM_SR * 0.45f);
     f32 g  = tanf(DM_PI * fc / (f32)DM_SR);
     f32 k  = 2.0f - 1.96f * dm_clamp(resonance, 0.0f, 0.98f);
-    svf_coef c;
+    dm_svf_coef c;
     c.k  = k;
     c.a1 = 1.0f / (1.0f + g * (g + k));
     c.a2 = g * c.a1;
     c.a3 = g * c.a2;
     return c;
-}
-
-static inline f32 svf_tick(svf *s, f32 in, const svf_coef *c, dm_filter_mode mode)
-{
-    f32 v3 = in - s->ic2;
-    f32 v1 = c->a1 * s->ic1 + c->a2 * v3;
-    f32 v2 = s->ic2 + c->a2 * s->ic1 + c->a3 * v3;
-    s->ic1 = 2.0f * v1 - s->ic1;
-    s->ic2 = 2.0f * v2 - s->ic2;
-    switch (mode) {
-    case DM_LP: return v2;
-    case DM_BP: return v1;
-    default:    return in - c->k * v1 - v2;
-    }
 }
 
 /* ---- envelopes ---------------------------------------------------------- */
@@ -167,8 +148,8 @@ void dm_synth_note(dm_audio *bus, dm_audio *send, const dm_patch *p,
     f32 subph = 0.0f;
     u32 nseed = seed ^ 0x9e3779b9u;
 
-    svf fl = { 0.0f, 0.0f }, fr = { 0.0f, 0.0f };
-    svf_coef coef = svf_make(p->cutoff, p->resonance);
+    dm_svf fl = { 0.0f, 0.0f }, fr = { 0.0f, 0.0f };
+    dm_svf_coef coef = dm_svf_make(p->cutoff, p->resonance);
     f32 keyhz = (base - 261.63f) * p->key_track;
 
     for (int i = i0; i < i1; i++) {
@@ -181,7 +162,7 @@ void dm_synth_note(dm_audio *bus, dm_audio *send, const dm_patch *p,
          * staircase in a cutoff sweep. */
         if (((i - i0) & 15) == 0) {
             f32 fenv = adsr_at(p->flt_a, p->flt_d, p->flt_s, p->flt_r, t, t_len);
-            coef = svf_make(p->cutoff + p->env_amount * fenv + keyhz, p->resonance);
+            coef = dm_svf_make(p->cutoff + p->env_amount * fenv + keyhz, p->resonance);
         }
 
         f32 fmul = 1.0f;
@@ -213,8 +194,8 @@ void dm_synth_note(dm_audio *bus, dm_audio *send, const dm_patch *p,
         sr = saturate(sr, p->drive);
 
         f32 g  = amp * velocity * p->gain;
-        f32 ol = svf_tick(&fl, sl, &coef, p->mode) * g;
-        f32 orr = svf_tick(&fr, sr, &coef, p->mode) * g;
+        f32 ol = dm_svf_tick(&fl, sl, &coef, p->mode) * g;
+        f32 orr = dm_svf_tick(&fr, sr, &coef, p->mode) * g;
 
         bus->l[i] += ol;
         bus->r[i] += orr;
@@ -271,8 +252,8 @@ void dm_drum_snare(dm_audio *bus, dm_audio *send, f64 t, f32 vel, f32 send_amt)
     if (i1 > bus->n) i1 = bus->n;
 
     u32 s = 0x27d4eb2fu;
-    svf bp = { 0, 0 };
-    svf_coef c = svf_make(1850.0f, 0.55f);
+    dm_svf bp = { 0, 0 };
+    dm_svf_coef c = dm_svf_make(1850.0f, 0.55f);
     f32 ph = 0.0f;
 
     for (int i = i0; i < i1; i++) {
@@ -280,7 +261,7 @@ void dm_drum_snare(dm_audio *bus, dm_audio *send, f64 t, f32 vel, f32 send_amt)
         s = dm_hash_u32(s);
         f32 n = dm_u32_to_f32(s) * 2.0f - 1.0f;
 
-        f32 noise = svf_tick(&bp, n, &c, DM_BP) * expf(-tt / 0.085f);
+        f32 noise = dm_svf_tick(&bp, n, &c, DM_BP) * expf(-tt / 0.085f);
 
         /* Two detuned tones under the noise give the shell its pitch. */
         ph += 188.0f / (f32)DM_SR;
@@ -300,8 +281,8 @@ void dm_drum_clap(dm_audio *bus, dm_audio *send, f64 t, f32 vel, f32 send_amt)
     if (i1 > bus->n) i1 = bus->n;
 
     u32 s = 0x165667b1u;
-    svf bp = { 0, 0 };
-    svf_coef c = svf_make(1450.0f, 0.42f);
+    dm_svf bp = { 0, 0 };
+    dm_svf_coef c = dm_svf_make(1450.0f, 0.42f);
 
     /* Four bursts a few milliseconds apart, then a longer tail. A single burst
      * sounds like a snare; the stutter is what makes it a room full of hands. */
@@ -316,7 +297,7 @@ void dm_drum_clap(dm_audio *bus, dm_audio *send, f64 t, f32 vel, f32 send_amt)
 
         s = dm_hash_u32(s);
         f32 n = dm_u32_to_f32(s) * 2.0f - 1.0f;
-        emit(bus, send, i, svf_tick(&bp, n, &c, DM_BP) * env * vel * 0.4f, send_amt);
+        emit(bus, send, i, dm_svf_tick(&bp, n, &c, DM_BP) * env * vel * 0.4f, send_amt);
     }
 }
 
@@ -328,17 +309,17 @@ void dm_drum_hat(dm_audio *bus, dm_audio *send, f64 t, f32 vel, f32 open, f32 se
     if (i1 > bus->n) i1 = bus->n;
 
     u32 s = 0x2545f491u;
-    svf hp = { 0, 0 }, lp = { 0, 0 };
-    svf_coef chp = svf_make(7600.0f, 0.15f);
+    dm_svf hp = { 0, 0 }, lp = { 0, 0 };
+    dm_svf_coef chp = dm_svf_make(7600.0f, 0.15f);
     /* A real cymbal has almost nothing left above 13 kHz. Without this cap the
      * high-pass passes noise flat to Nyquist and the whole mix hisses. */
-    svf_coef clp = svf_make(12500.0f, 0.0f);
+    dm_svf_coef clp = dm_svf_make(12500.0f, 0.0f);
 
     for (int i = i0; i < i1; i++) {
         f32 tt = (f32)(i - i0) / (f32)DM_SR;
         s = dm_hash_u32(s);
         f32 n = dm_u32_to_f32(s) * 2.0f - 1.0f;
-        f32 v = svf_tick(&lp, svf_tick(&hp, n, &chp, DM_HP), &clp, DM_LP)
+        f32 v = dm_svf_tick(&lp, dm_svf_tick(&hp, n, &chp, DM_HP), &clp, DM_LP)
                 * expf(-tt / decay) * vel * 0.30f;
         /* Hats sit slightly off centre so they do not fight the kick. */
         bus->l[i] += v * 0.9f;
@@ -378,8 +359,8 @@ void dm_fx_sweep(dm_audio *bus, f64 t, f64 len, f32 vel, int rising)
     if (i1 <= i0) return;
 
     u32 s = 0xb5297a4du;
-    svf fl = { 0, 0 }, fr = { 0, 0 };
-    svf_coef c = svf_make(500.0f, 0.7f);
+    dm_svf fl = { 0, 0 }, fr = { 0, 0 };
+    dm_svf_coef c = dm_svf_make(500.0f, 0.7f);
 
     for (int i = i0; i < i1; i++) {
         f32 u = (f32)(i - i0) / (f32)(i1 - i0);
@@ -387,7 +368,7 @@ void dm_fx_sweep(dm_audio *bus, f64 t, f64 len, f32 vel, int rising)
             /* Sweeping in octaves rather than hertz is what makes the motion
              * sound linear to the ear. */
             f32 oct = rising ? dm_lerp(4.6f, 12.6f, u) : dm_lerp(12.6f, 4.6f, u);
-            c = svf_make(powf(2.0f, oct), 0.72f);
+            c = dm_svf_make(powf(2.0f, oct), 0.72f);
         }
         s = dm_hash_u32(s);
         f32 nl = dm_u32_to_f32(s) * 2.0f - 1.0f;
@@ -395,8 +376,8 @@ void dm_fx_sweep(dm_audio *bus, f64 t, f64 len, f32 vel, int rising)
         f32 nr = dm_u32_to_f32(s) * 2.0f - 1.0f;
 
         f32 env = sinf(u * DM_PI);   /* fades in and out, no edges */
-        bus->l[i] += svf_tick(&fl, nl, &c, DM_BP) * env * vel * 0.35f;
-        bus->r[i] += svf_tick(&fr, nr, &c, DM_BP) * env * vel * 0.35f;
+        bus->l[i] += dm_svf_tick(&fl, nl, &c, DM_BP) * env * vel * 0.35f;
+        bus->r[i] += dm_svf_tick(&fr, nr, &c, DM_BP) * env * vel * 0.35f;
     }
 }
 
@@ -409,13 +390,13 @@ void dm_fx_riser(dm_audio *bus, f64 t_land, f64 len, f32 vel)
     if (i1 <= i0) return;
 
     u32 s = 0x68e31da4u;
-    svf fl = { 0, 0 }, fr = { 0, 0 };
-    svf_coef c = svf_make(300.0f, 0.9f);
+    dm_svf fl = { 0, 0 }, fr = { 0, 0 };
+    dm_svf_coef c = dm_svf_make(300.0f, 0.9f);
 
     for (int i = i0; i < i1; i++) {
         f32 u = (f32)(i - i0) / (f32)(i1 - i0);
         if (((i - i0) & 31) == 0)
-            c = svf_make(powf(2.0f, dm_lerp(5.5f, 13.2f, u * u)), 0.93f);
+            c = dm_svf_make(powf(2.0f, dm_lerp(5.5f, 13.2f, u * u)), 0.93f);
 
         s = dm_hash_u32(s);
         f32 nl = dm_u32_to_f32(s) * 2.0f - 1.0f;
@@ -423,8 +404,8 @@ void dm_fx_riser(dm_audio *bus, f64 t_land, f64 len, f32 vel)
         f32 nr = dm_u32_to_f32(s) * 2.0f - 1.0f;
 
         f32 env = u * u * vel * 0.5f;
-        bus->l[i] += svf_tick(&fl, nl, &c, DM_BP) * env;
-        bus->r[i] += svf_tick(&fr, nr, &c, DM_BP) * env;
+        bus->l[i] += dm_svf_tick(&fl, nl, &c, DM_BP) * env;
+        bus->r[i] += dm_svf_tick(&fr, nr, &c, DM_BP) * env;
     }
 }
 
@@ -594,11 +575,11 @@ void dm_fx_saturate(dm_audio *a, f32 drive)
 
 static void filter_inplace(dm_audio *a, f32 hz, dm_filter_mode mode)
 {
-    svf fl = { 0, 0 }, fr = { 0, 0 };
-    svf_coef c = svf_make(hz, 0.0f);
+    dm_svf fl = { 0, 0 }, fr = { 0, 0 };
+    dm_svf_coef c = dm_svf_make(hz, 0.0f);
     for (int i = 0; i < a->n; i++) {
-        a->l[i] = svf_tick(&fl, a->l[i], &c, mode);
-        a->r[i] = svf_tick(&fr, a->r[i], &c, mode);
+        a->l[i] = dm_svf_tick(&fl, a->l[i], &c, mode);
+        a->r[i] = dm_svf_tick(&fr, a->r[i], &c, mode);
     }
 }
 

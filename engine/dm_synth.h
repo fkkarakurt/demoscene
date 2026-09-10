@@ -44,6 +44,32 @@ dm_patch dm_patch_default(void);
 
 static inline f32 dm_midi_hz(f32 m) { return 440.0f * powf(2.0f, (m - 69.0f) * (1.0f / 12.0f)); }
 
+/* ---- the filter --------------------------------------------------------- */
+
+/* Zavalishin's topology-preserving state-variable filter. Unlike the classic
+ * Chamberlin form it stays stable and keeps its tuning all the way up to
+ * Nyquist, which matters because the envelopes here sweep several octaves in a
+ * few milliseconds. Every voice and drum below is built on it; it is exposed
+ * for instruments that are not a dm_patch. */
+typedef struct { f32 ic1, ic2; } dm_svf;
+typedef struct { f32 a1, a2, a3, k; } dm_svf_coef;
+
+dm_svf_coef dm_svf_make(f32 cutoff_hz, f32 resonance);
+
+static inline f32 dm_svf_tick(dm_svf *s, f32 in, const dm_svf_coef *c, dm_filter_mode mode)
+{
+    f32 v3 = in - s->ic2;
+    f32 v1 = c->a1 * s->ic1 + c->a2 * v3;
+    f32 v2 = s->ic2 + c->a2 * s->ic1 + c->a3 * v3;
+    s->ic1 = 2.0f * v1 - s->ic1;
+    s->ic2 = 2.0f * v2 - s->ic2;
+    switch (mode) {
+    case DM_LP: return v2;
+    case DM_BP: return v1;
+    default:    return in - c->k * v1 - v2;
+    }
+}
+
 /* ---- voices ------------------------------------------------------------ */
 
 void dm_synth_note(dm_audio *bus, dm_audio *send, const dm_patch *p,

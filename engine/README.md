@@ -16,11 +16,11 @@ the two files that touch the platform.
 | `dm_color.h` | sRGB encode and decode, ACES and Reinhard tone mapping, the house palette, HSV, blackbody, dither. |
 | `dm_rand.h` | Hashes, a small PRNG, Perlin and ridged noise, domain warping, Worley, low-discrepancy sequences. |
 | `dm_fb.c/.h` | The HDR framebuffer: three floats per pixel in linear light, with sampling, splatting and resolve. |
-| `dm_font.c/.h` | A stroke font rasterised from a distance field. Every glyph is a handful of line segments typed out by hand. |
+| `dm_font.c/.h` | A stroke font rasterised from a distance field. Every glyph is a handful of line segments typed out by hand, and the segments themselves are available to code that wants lines rather than pixels. |
 | `dm_post.c/.h` | The post chain: bloom over a mip pyramid, chromatic aberration, barrel distortion, vignette, grain. |
 | `dm_job.c/.h` | A work-stealing parallel-for over Win32 threads. Workers pull row indices off an atomic counter, which self-balances. |
 | `dm_audio.c/.h` | Interleaved stereo float buffers, statistics, and a WAV writer. |
-| `dm_synth.c/.h` | PolyBLEP oscillators, a TPT state-variable filter, ADSR envelopes, a comb-and-allpass reverb, delay, compression. |
+| `dm_synth.c/.h` | PolyBLEP oscillators, a TPT state-variable filter (exposed on its own for instruments that are not a patch), ADSR envelopes, a comb-and-allpass reverb, delay, compression. |
 | `dm_video.c/.h` | The frame sink: raw RGB24 into an ffmpeg pipe, falling back to a numbered PPM sequence if ffmpeg is missing. |
 
 ## The two ideas worth knowing

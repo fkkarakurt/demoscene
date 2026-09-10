@@ -20,6 +20,7 @@ Each part stands on its own and can be read, built or downloaded separately.
 | [`demos/01-coldstart/`](demos/01-coldstart/) | A two-minute demo: nine scenes, a timeline and a soundtrack, built on the engine. |
 | [`demos/02-runtime/`](demos/02-runtime/) | Thirty seconds, vertical. The picture is shown being computed, row by row, in the order the thread pool walks it. |
 | [`demos/03-liftoff/`](demos/03-liftoff/) | Thirty seconds, vertical, and not abstract. A launch to orbit, flown by an integrated trajectory rather than by keyframes. |
+| [`demos/04-trace/`](demos/04-trace/) | Thirty seconds, vertical, in which nothing is drawn. Every frame is the soundtrack, plotted as an oscilloscope plots it, with time laid out in depth. |
 | [`tools/`](tools/) | Small programs that use the engine but are not part of any demo: a smoke test, a font sheet, and the channel-art renderer. |
 | [`brand/`](brand/) | Finished PNGs — avatar, banner, watermark, thumbnails. Ready to download and upload. |
 
@@ -66,12 +67,13 @@ so comments and blank lines are excluded there but present in the line count.
 
 | | Files | Lines | Code |
 |---|---:|---:|---:|
-| `engine/` | 18 | 2,715 | 1,998 |
+| `engine/` | 18 | 2,754 | 2,018 |
 | `demos/01-coldstart/` | 13 | 2,313 | 1,563 |
 | `demos/02-runtime/` | 7 | 1,404 | 935 |
 | `demos/03-liftoff/` | 12 | 3,067 | 1,906 |
+| `demos/04-trace/` | 14 | 2,188 | 1,449 |
 | `tools/` | 3 | 713 | 517 |
-| **Total** | **53** | **10,212** | **6,919** |
+| **Total** | **67** | **12,439** | **8,388** |
 
 Third-party libraries: none. The engine links libc and Win32, and nothing else.
 

@@ -16,7 +16,7 @@
 # the title in from the filename.
 
 param(
-    [string]$Demo = "03-liftoff",
+    [string]$Demo = "04-trace",
     [switch]$Replace
 )
 
@@ -43,6 +43,12 @@ $meta = @{
         Upload  = "LIFTOFF - A Rocket Launch Written in C - No Assets, No Engine, No GPU.mp4"
         Title   = "LIFTOFF - A Rocket Launch Written in C"
         Comment = "Thirty seconds of a launch to orbit, computed at runtime from nothing but C. No images, no audio files, no 3D models, no game engine, no GPU. The trajectory is integrated rather than keyframed, and every camera, the exhaust and the numbers on screen read out of that one integration. Source: https://github.com/fkkarakurt/demoscene"
+    }
+    "04-trace" = @{
+        File    = "trace.mp4"
+        Upload  = "TRACE - The Soundtrack Is the Picture - Written in C.mp4"
+        Title   = "TRACE - The Soundtrack Is the Picture"
+        Comment = "Thirty seconds in which nothing is drawn. Every frame is the soundtrack itself, plotted the way an oscilloscope in XY mode plots a stereo signal - left channel across, right channel up - with time laid out in depth behind it. Music and picture are computed at runtime from nothing but C: no images, no audio files, no engine, no GPU. Source: https://github.com/fkkarakurt/demoscene"
     }
 }
 
