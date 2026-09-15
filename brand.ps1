@@ -38,20 +38,32 @@ if ($LASTEXITCODE -ne 0) { throw "brand render failed" }
 # caption is what is being tested here, not the plate: if the video title
 # already carries the claim, a thumbnail repeating it spends its two lines
 # saying nothing new.
+#
+# ENDURANCE's plates come from its `plate` mode: the picture filling the whole
+# 16:9 frame with no captions, where a film frame would bring its letterbox
+# bars and its burned-in text along. They are three, for YouTube's Test &
+# compare, and each caption is written against the title it is tested with.
 $thumbs = @(
-    @{ still = "still_083.00.ppm"; name = "coldstart-lines";  l1 = "5228 LINES"; l2 = "NO ASSETS" },
-    @{ still = "still_083.00.ppm"; name = "coldstart-assets"; l1 = "NO ASSETS";  l2 = "JUST C" },
-    @{ still = "still_019.00.ppm"; name = "coldstart-tunnel"; l1 = "5228 LINES"; l2 = "NO ASSETS" }
+    @{ dir = "01-coldstart";  still = "still_083.00.ppm";  name = "coldstart-lines";  l1 = "5228 LINES";  l2 = "NO ASSETS" },
+    @{ dir = "01-coldstart";  still = "still_083.00.ppm";  name = "coldstart-assets"; l1 = "NO ASSETS";   l2 = "JUST C" },
+    @{ dir = "01-coldstart";  still = "still_019.00.ppm";  name = "coldstart-tunnel"; l1 = "5228 LINES";  l2 = "NO ASSETS" },
+    # Rendered with `endurance plate 112 3840 4`, `plate 36.5 ...`, `plate 70.5 ...`.
+    # The twilight plate has no kicker: its top left is bright sky.
+    @{ dir = "05-endurance";  still = "plate_112.000.ppm"; name = "endurance-found";  l1 = "LOST 1915";   l2 = "FOUND 2022";  kick = "ENDURANCE / KORMOS"; crop = "364,345,3111,1750" },
+    @{ dir = "05-endurance";  still = "plate_036.500.ppm"; name = "endurance-depth";  l1 = "3,008 M";     l2 = "106 YEARS";   kick = " " },
+    @{ dir = "05-endurance";  still = "plate_070.500.ppm"; name = "endurance-code";   l1 = "EVERY FRAME"; l2 = "IS C CODE";   kick = "ENDURANCE / KORMOS" }
 )
 
 if ($Skip -ne "Thumbs") {
     foreach ($t in $thumbs) {
-        $src = "$root\demos\01-coldstart\out\$($t.still)"
+        $src = "$root\demos\$($t.dir)\out\$($t.still)"
         if (-not (Test-Path $src)) {
-            Write-Host "[skip] $($t.name): no $($t.still) -- render it with 'coldstart still <t> 3840 2160 2'"
+            Write-Host "[skip] $($t.name): no $($t.dir)\out\$($t.still) -- render that frame first"
             continue
         }
-        & "$root\tools\out\brand.exe" thumb $src $t.name $t.l1 $t.l2
+        if     ($t.crop) { & "$root\tools\out\brand.exe" thumb $src $t.name $t.l1 $t.l2 $t.kick $t.crop }
+        elseif ($t.kick) { & "$root\tools\out\brand.exe" thumb $src $t.name $t.l1 $t.l2 $t.kick }
+        else             { & "$root\tools\out\brand.exe" thumb $src $t.name $t.l1 $t.l2 }
         if ($LASTEXITCODE -ne 0) { throw "thumbnail $($t.name) failed" }
     }
 }
@@ -69,6 +81,11 @@ Convert-Png "avatar" "$root\brand\channel\avatar.png"
 Convert-Png "banner" "$root\brand\channel\banner.png"
 foreach ($t in $thumbs) {
     Convert-Png "thumb_$($t.name)" "$root\brand\thumbnails\$($t.name).png"
+    # And a JPEG, which stays well under the upload form's 2 MB limit however
+    # busy the plate is.
+    if (Test-Path "$work\thumb_$($t.name).ppm") {
+        & ffmpeg -y -loglevel error -i "$work\thumb_$($t.name).ppm" -q:v 2 "$root\brand\thumbnails\$($t.name).jpg"
+    }
 }
 
 # The watermark is the one asset that needs an alpha channel: it is stamped

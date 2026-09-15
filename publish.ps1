@@ -50,6 +50,12 @@ $meta = @{
         Title   = "TRACE - The Soundtrack Is the Picture"
         Comment = "Thirty seconds in which nothing is drawn. Every frame is the soundtrack itself, plotted the way an oscilloscope in XY mode plots a stereo signal - left channel across, right channel up - with time laid out in depth behind it. Music and picture are computed at runtime from nothing but C: no images, no audio files, no engine, no GPU. Source: https://github.com/fkkarakurt/demoscene"
     }
+    "05-endurance" = @{
+        File    = "endurance.mp4"
+        Upload  = "ENDURANCE - How Shackleton's Ship Sank and Was Found 3,008 m Down - 4K, Pure C.mp4"
+        Title   = "ENDURANCE - How Shackleton's Ship Sank and Was Found 3,008 m Down"
+        Comment = "Two minutes in 4K of a true story: Shackleton's Endurance, frozen into the Weddell Sea in 1915, crushed and sunk that November, and found in March 2022 at 3,008 metres. The sun, moon and sky are computed for the real date, hour and position of every shot; the ship, the ice, the water and the score are computed at runtime from nothing but C. No footage, no images, no audio files, no 3D models, no engine, no GPU. Source and sources: https://github.com/fkkarakurt/demoscene"
+    }
 }
 
 if (-not $meta.ContainsKey($Demo)) { throw "no publish metadata for demo: $Demo" }

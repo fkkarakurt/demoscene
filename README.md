@@ -21,8 +21,28 @@ Each part stands on its own and can be read, built or downloaded separately.
 | [`demos/02-runtime/`](demos/02-runtime/) | Thirty seconds, vertical. The picture is shown being computed, row by row, in the order the thread pool walks it. |
 | [`demos/03-liftoff/`](demos/03-liftoff/) | Thirty seconds, vertical, and not abstract. A launch to orbit, flown by an integrated trajectory rather than by keyframes. |
 | [`demos/04-trace/`](demos/04-trace/) | Thirty seconds, vertical, in which nothing is drawn. Every frame is the soundtrack, plotted as an oscilloscope plots it, with time laid out in depth. |
+| [`demos/05-endurance/`](demos/05-endurance/) | Two minutes in 4K, and a true story: Shackleton's ship, from the winter in the ice to the wreck found 3,008 metres down, lit for the real date, hour and place of every shot. |
 | [`tools/`](tools/) | Small programs that use the engine but are not part of any demo: a smoke test, a font sheet, and the channel-art renderer. |
 | [`brand/`](brand/) | Finished PNGs — avatar, banner, watermark, thumbnails. Ready to download and upload. |
+
+## Films
+
+The finished films are on the
+[releases page](https://github.com/fkkarakurt/demoscene/releases), one release
+per demo. Each is the resolution it was rendered at, with the video and audio
+streams exactly as the encoder wrote them: nothing is scaled down or
+re-encoded for the upload. Every link below starts the download directly.
+
+| Demo | Frame | Rate | Length | Size |
+|---|---|---:|---:|---:|
+| [COLD START](https://github.com/fkkarakurt/demoscene/releases/download/coldstart/coldstart-1920x1080.mp4) | 1920×1080 | 60 fps | 2:00 | 684.6 MiB |
+| [RUNTIME](https://github.com/fkkarakurt/demoscene/releases/download/runtime/runtime-1080x1920.mp4) | 1080×1920 | 60 fps | 0:30 | 140.9 MiB |
+| [LIFTOFF](https://github.com/fkkarakurt/demoscene/releases/download/liftoff/liftoff-1080x1920.mp4) | 1080×1920 | 60 fps | 0:30 | 23.6 MiB |
+| [TRACE](https://github.com/fkkarakurt/demoscene/releases/download/trace/trace-1440x2560.mp4) | 1440×2560 | 60 fps | 0:30 | 89.0 MiB |
+| [ENDURANCE](https://github.com/fkkarakurt/demoscene/releases/download/endurance/endurance-3840x2160.mp4) | 3840×2160 | 24 fps | 2:00 | 331.5 MiB |
+
+H.264 High profile and 48 kHz stereo AAC throughout. Each release's notes
+carry the file's SHA-256.
 
 ## Building
 
@@ -72,8 +92,9 @@ so comments and blank lines are excluded there but present in the line count.
 | `demos/02-runtime/` | 7 | 1,404 | 935 |
 | `demos/03-liftoff/` | 12 | 3,067 | 1,906 |
 | `demos/04-trace/` | 14 | 2,188 | 1,449 |
-| `tools/` | 3 | 713 | 517 |
-| **Total** | **67** | **12,439** | **8,388** |
+| `demos/05-endurance/` | 24 | 7,510 | 5,424 |
+| `tools/` | 3 | 732 | 531 |
+| **Total** | **91** | **19,968** | **13,826** |
 
 Third-party libraries: none. The engine links libc and Win32, and nothing else.
 

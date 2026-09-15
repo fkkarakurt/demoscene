@@ -3,7 +3,8 @@
  *   brand avatar                              800x800    profile picture
  *   brand banner                              2560x1440  channel art
  *   brand watermark                           300x300    video watermark, + alpha
- *   brand thumb <plate.ppm> <tag> <l1> <l2>   1280x720   video thumbnail
+ *   brand thumb <plate.ppm> <tag> <l1> <l2> [kicker] [x,y,w,h]
+ *                                             1280x720   video thumbnail
  *
  * A channel whose whole claim is that nothing was downloaded cannot go and
  * download its own logo. Everything below is built from the same noise, the
@@ -392,12 +393,28 @@ static int mode_watermark(void)
  * becomes clear once the title is written. The stroke font covers ASCII 32..95,
  * so the caption is uppercase and diacritic-free by construction. */
 static int mode_thumb(const char *plate_path, const char *tag,
-                      const char *l1, const char *l2)
+                      const char *l1, const char *l2, const char *kicker,
+                      const char *crop)
 {
     const int W = 1280, H = 720;
 
     dm_fb *src = read_ppm(plate_path);
     if (!src) return 1;
+
+    /* A window of the plate, "x,y,w,h" in its pixels: the film frames its
+     * subject for the whole picture, and a thumbnail needs the bottom left
+     * clear for the caption. */
+    int cx, cy, cw, ch;
+    if (crop && sscanf(crop, "%d,%d,%d,%d", &cx, &cy, &cw, &ch) == 4 &&
+        cx >= 0 && cy >= 0 && cw > 0 && ch > 0 && cx + cw <= src->w && cy + ch <= src->h) {
+        dm_fb *win = dm_fb_new(cw, ch);
+        if (!win) { dm_fb_free(src); return 1; }
+        for (int y = 0; y < ch; y++)
+            for (int x = 0; x < cw; x++)
+                dm_fb_set(win, x, y, dm_fb_get(src, cx + x, cy + y));
+        dm_fb_free(src);
+        src = win;
+    }
     dm_fb *fb = dm_fb_new(W, H);
     if (!fb) { dm_fb_free(src); return 1; }
 
@@ -443,7 +460,7 @@ static int mode_thumb(const char *plate_path, const char *tag,
     kick.color     = v3_scl(dm_rgb8(170, 205, 255), 1.25f);
     kick.glow      = kick.size * 0.20f;
     kick.glow_gain = 0.35f;
-    dm_text_draw(fb, V2(70.0f, 84.0f), "COLD START / KORMOS", &kick);
+    dm_text_draw(fb, V2(70.0f, 84.0f), kicker, &kick);
 
     printf("[thumb] %s: \"%s\" %.0f px, \"%s\" %.0f px of 1280\n",
            tag, l1, dm_text_width(l1, &big), l2, dm_text_width(l2, &big));
@@ -478,10 +495,12 @@ int main(int argc, char **argv)
     else if (strcmp(mode, "watermark") == 0) rc = mode_watermark();
     else if (strcmp(mode, "thumb")     == 0) {
         if (argc < 6) {
-            fprintf(stderr, "usage: brand thumb <plate.ppm> <tag> <line1> <line2>\n");
+            fprintf(stderr, "usage: brand thumb <plate.ppm> <tag> <line1> <line2> [kicker] [x,y,w,h]\n");
             rc = 1;
         } else {
-            rc = mode_thumb(argv[2], argv[3], argv[4], argv[5]);
+            rc = mode_thumb(argv[2], argv[3], argv[4], argv[5],
+                            argc > 6 ? argv[6] : "COLD START / KORMOS",
+                            argc > 7 ? argv[7] : NULL);
         }
     } else if (strcmp(mode, "all") == 0) {
         rc = mode_avatar();
